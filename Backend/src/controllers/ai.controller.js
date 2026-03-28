@@ -9,7 +9,9 @@ module.exports.getReview = async (req, res) => {
     }
 
     try {
+        console.log(`[Review Controller] Starting analysis...`);
         const response = await aiService(code);
+        console.log(`[Review Controller] Analysis complete.`);
         res.json(response);
     } catch (error) {
         console.error("Controller Error (Review):", error);

@@ -39,20 +39,22 @@ Raise the quality of code by being highly rigorous — but only when necessary.
 Return the result in JSON format:
 {
   "review": "the markdown code review",
-  "explanation": "a high-level summary of the findings"
+  "explanation": "a high-level summary of the findings",
+  "score": "a score out of 100 representing the quality of the code"
 }
 Return ONLY the JSON. No markdown wrappers.
 `
 });
 
 async function generateContent(prompt) {
-  const maxRetries = 5;
-  const retryDelay = 5000;
+  const maxRetries = 10;
+  const retryDelay = 10000;
 
   for (let i = 0; i <= maxRetries; i++) {
     try {
       const result = await model.generateContent(prompt);
       const text = result.response.text().trim();
+      console.log(`[AI Service] Raw Output: ${text.substring(0, 500)}...`);
 
       try {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -60,7 +62,8 @@ async function generateContent(prompt) {
         const parsed = JSON.parse(jsonStr.replace(/```json|```/g, ""));
         return {
           review: parsed.review || parsed.result || parsed.findings || text,
-          explanation: parsed.explanation || "Review generated successfully."
+          explanation: parsed.explanation || "Review generated successfully.",
+          score: parsed.score || 0
         };
       } catch (e) {
         return { review: text, explanation: "Review generated successfully." };

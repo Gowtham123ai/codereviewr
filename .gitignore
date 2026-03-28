@@ -1,0 +1,17 @@
+node_modules/
+.env
+dist/
+build/
+.DS_Store
+*.log
+/tmp/
+.vscode/
+.idea/
+Backend/test-models*.js
+Backend/test-gemini.js
+Backend/list-models.js
+Backend/check-api-raw.js
+Backend/test-ai.js
+Backend/test-axios-ai.js
+Backend/test-multiple-models-axios.js
+Backend/test-working-models.js

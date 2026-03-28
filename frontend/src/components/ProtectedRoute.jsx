@@ -13,7 +13,7 @@ export default function ProtectedRoute({ children }) {
         return () => unsub();
     }, []);
 
-    if (user === undefined) return <div style={{ color: 'white', textAlign: 'center', marginTop: '50px' }}>Loading...</div>;
+    if (user === undefined) return <div style={{ color: '#6366f1', textAlign: 'center', marginTop: '100px', fontFamily: 'sans-serif' }}>Loading CodeReviewer...</div>;
     if (!user) return <Navigate to="/" />;
 
     return children;

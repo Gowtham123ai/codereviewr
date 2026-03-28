@@ -8,7 +8,7 @@ import History from "./pages/History";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(false); // Default to light mode as per image
 
   useEffect(() => {
     document.body.className = darkMode ? "dark" : "light";

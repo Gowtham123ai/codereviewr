@@ -13,9 +13,11 @@ import { auth, db } from "../firebase"
 import { useNavigate } from "react-router-dom"
 import { query, where, getDocs, collection, orderBy } from "firebase/firestore"
 import { diffLines } from "diff"
+import { Layout, History as HistoryIcon, Sparkles, Play, ShieldCheck, Zap, LineChart, CheckSquare, FileCode, ChevronDown, Brain, Search } from 'lucide-react'
 import History from "./History"
 
 export default function Dashboard({ darkMode, setDarkMode }) {
+    console.log("[Dashboard] Rendering initialized with darkMode:", darkMode);
     const [code, setCode] = useState(`function sum() {
   return 1 + 1
 }`);
@@ -29,6 +31,8 @@ export default function Dashboard({ darkMode, setDarkMode }) {
     const [language, setLanguage] = useState("javascript")
     const [usageCount, setUsageCount] = useState(0)
     const [mode, setMode] = useState("review")
+    const [score, setScore] = useState(0)
+    const [currentChallenge, setCurrentChallenge] = useState(null)
     const navigate = useNavigate()
 
     const fetchHistory = () => {
@@ -55,19 +59,61 @@ export default function Dashboard({ darkMode, setDarkMode }) {
         localStorage.setItem("history", JSON.stringify(updated));
     };
 
-    const handleAction = async (type) => {
-        if (!code.trim()) return;
+    const handleRunCode = () => {
+        setIsLoading(true);
+        setError(null);
+        setMode("run");
+        
+        // Use a small delay to simulate execution and allow the UI to update
+        setTimeout(() => {
+            try {
+                const logCapture = [];
+                const mockConsole = {
+                    log: (...args) => logCapture.push(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '))
+                };
+                
+                // Stable JS runner
+                const runFunc = new Function('console', 'codeContents', 'try { eval(codeContents); } catch(e) { console.log("Error: " + e.message); }');
+                runFunc(mockConsole, code);
+                
+                const outputText = logCapture.length > 0 
+                    ? logCapture.join('\n') 
+                    : "Code executed successfully. (No output to console)";
+                    
+                setResult(outputText);
+                setExplanation("Code was executed in your local browser sandbox.");
+                setScore(100);
+                saveToHistory("run", outputText);
+            } catch (err) {
+                setResult(`Execution Failed: ${err.message}`);
+                setError(`Execution error: ${err.message}`);
+                setScore(0);
+            } finally {
+                setIsLoading(false);
+            }
+        }, 800);
+    };
+
+    const handleAction = async (type, forcedCode = null) => {
+        const targetCode = forcedCode || code;
+        if (!targetCode?.trim()) return;
+        
+        if (type === "run") {
+            handleRunCode();
+            return;
+        }
 
         setIsLoading(true);
         setError(null);
         setMode(type);
 
+        const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, ""); // Clean any trailing slash
         const endpoint = type === "rewrite"
-            ? `${import.meta.env.VITE_API_URL}/api/rewrite`
-            : `${import.meta.env.VITE_API_URL}/ai/get-review`;
+            ? `${baseUrl}/api/rewrite`
+            : `${baseUrl}/ai/get-review`;
 
         try {
-            const response = await axios.post(endpoint, { code, language });
+            const response = await axios.post(endpoint, { code: targetCode, language });
             const data = response.data;
 
             if (type === "rewrite") {
@@ -78,6 +124,7 @@ export default function Dashboard({ darkMode, setDarkMode }) {
             } else {
                 setResult(data.review);
                 setExplanation(data.explanation);
+                setScore(parseInt(data.score) || 0);
                 saveToHistory("review", data.review);
             }
 
@@ -128,51 +175,83 @@ export default function Dashboard({ darkMode, setDarkMode }) {
                     <h3>CodeReview AI</h3>
                 </div>
 
-                <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className="sidebar-nav" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
                     <button
                         className={`sidebar-btn ${activeTab === 'review' ? 'active' : ''}`}
                         onClick={() => setActiveTab('review')}
                     >
-                        Editor
+                        <Layout size={18} />
+                        <span>Editor</span>
                     </button>
                     <button
                         className={`sidebar-btn ${activeTab === 'rewrite' ? 'active' : ''}`}
                         onClick={() => setActiveTab('rewrite')}
                     >
-                        Tools
+                        <Zap size={18} />
+                        <span>AI Tools</span>
+                    </button>
+                    <button
+                        className={`sidebar-btn ${activeTab === 'test' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('test')}
+                    >
+                        <CheckSquare size={18} />
+                        <span>Coding Test</span>
                     </button>
                     <button
                         className={`sidebar-btn ${activeTab === 'history' ? 'active' : ''}`}
                         onClick={() => setActiveTab('history')}
                     >
-                        History
+                        <HistoryIcon size={18} />
+                        <span>History</span>
                     </button>
                 </div>
 
-                <div className="usage-panel">
-                    <p>Daily Usage</p>
-                    <div className="progress-bar">
+                <div className="usage-panel" style={{ padding: '20px 0 10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <p style={{ fontSize: '10px', fontWeight: '800', color: '#3b82f6', letterSpacing: '0.05em', margin: 0 }}>USAGE</p>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#1e293b' }}>{usageCount} / 10</span>
+                    </div>
+                    <div className="progress-bar" style={{ height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden', marginBottom: '16px' }}>
                         <div
                             className="progress-fill"
-                            style={{ width: `${(usageCount / 10) * 100}%` }}
+                            style={{ width: `${(usageCount / 10) * 100}%`, height: '100%', background: '#3b82f6', transition: 'width 0.3s ease' }}
                         />
                     </div>
-                    <span>{usageCount} / 10 queries used</span>
+                    <button className="upgrade-btn" style={{
+                        background: 'linear-gradient(to right, #f59e0b, #ea580c)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        padding: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        width: '100%',
+                        textTransform: 'uppercase'
+                    }}>
+                        <Sparkles size={14} fill="white" />
+                        <span>UPGRADE</span>
+                    </button>
                 </div>
 
-                <div className="sidebar-footer">
+                <div className="sidebar-footer" style={{ borderTop: '1px solid #e2e8f0', marginTop: '10px', paddingTop: '10px' }}>
                     <button
                         className="sidebar-btn"
                         onClick={() => setDarkMode(!darkMode)}
+                        style={{ width: '100%' }}
                     >
-                        {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
+                        <Zap size={16} />
+                        <span>{darkMode ? "Dark Mode" : "Light Mode"}</span>
                     </button>
                     <button
-                        className="sidebar-btn"
+                        className="logout-btn"
                         onClick={handleLogout}
-                        style={{ color: '#ef4444' }}
                     >
-                        Logout
+                        <span>Logout</span>
                     </button>
                 </div>
             </div>
@@ -191,44 +270,57 @@ export default function Dashboard({ darkMode, setDarkMode }) {
                             <div className="editor-panel">
                                 <div className="editor-toolbar">
                                     <div className="file-section">
-                                        <input
-                                            className="file-input"
-                                            value={fileName}
-                                            onChange={(e) => setFileName(e.target.value)}
-                                            placeholder="index.js"
-                                        />
+                                        <div className="file-pill">
+                                            <FileCode size={14} />
+                                            <input
+                                                className="file-pill-input"
+                                                value={fileName}
+                                                onChange={(e) => setFileName(e.target.value)}
+                                            />
+                                        </div>
 
-                                        <select
-                                            className="language-select"
-                                            value={language}
-                                            onChange={(e) => setLanguage(e.target.value)}
-                                        >
-                                            <option value="javascript">JavaScript</option>
-                                            <option value="python">Python</option>
-                                            <option value="java">Java</option>
-                                        </select>
+                                        <div className="lang-pill">
+                                            <div className="lang-badge">JS</div>
+                                            <select
+                                                className="lang-pill-select"
+                                                value={language}
+                                                onChange={(e) => setLanguage(e.target.value)}
+                                            >
+                                                <option value="javascript">JavaScript</option>
+                                                <option value="python">Python</option>
+                                                <option value="java">Java</option>
+                                            </select>
+                                            <ChevronDown size={14} />
+                                        </div>
                                     </div>
 
                                     <div className="action-buttons">
                                         <button
-                                            className={`btn-review ${mode === "review" ? "active-btn" : ""}`}
-                                            onClick={() => handleAction("review")}
+                                            className="btn-run action-btn"
+                                            onClick={() => handleAction("run")}
                                             disabled={isLoading}
                                         >
-                                            {isLoading && mode === 'review' ? '⚡ ...' : '⚡ Review'}
+                                            <Play size={16} fill="currentColor" />
+                                            <span>Run Code</span>
                                         </button>
 
                                         <button
-                                            className={`btn-rewrite ${mode === "rewrite" ? "active-btn" : ""}`}
+                                            className={`btn-review action-btn ${mode === "review" ? "active-btn" : ""}`}
+                                            onClick={() => handleAction("review")}
+                                            disabled={isLoading}
+                                        >
+                                            <ShieldCheck size={16} />
+                                            <span>{isLoading && mode === 'review' ? 'Analyzing...' : 'Check Quality'}</span>
+                                        </button>
+
+                                        <button
+                                            className={`btn-rewrite action-btn ${mode === "rewrite" ? "active-btn" : ""}`}
                                             onClick={() => handleAction("rewrite")}
                                             disabled={isLoading}
                                         >
-                                            {isLoading && mode === 'rewrite' ? '✨ ...' : '✨ Rewrite'}
+                                            <Sparkles size={16} />
+                                            <span>{isLoading && mode === 'rewrite' ? 'Rewriting...' : 'Rewrite AI'}</span>
                                         </button>
-                                    </div>
-
-                                    <div className="usage-pill">
-                                        {usageCount} / 10
                                     </div>
                                 </div>
 
@@ -236,7 +328,7 @@ export default function Dashboard({ darkMode, setDarkMode }) {
                                     value={code}
                                     height="100%"
                                     extensions={[javascript()]}
-                                    theme={oneDark}
+                                    theme={darkMode ? oneDark : 'light'}
                                     onChange={(value) => setCode(value)}
                                     basicSetup={{
                                         lineNumbers: true,
@@ -252,42 +344,205 @@ export default function Dashboard({ darkMode, setDarkMode }) {
 
                             <div className="output-panel">
                                 {isLoading ? (
-                                    <div className="loading-state" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <div className="loading-state">
+                                        <div className="spinner"></div>
                                         <p>AI is processing your code...</p>
                                     </div>
                                 ) : result ? (
                                     <div className="analysis-output">
-                                        {mode === 'rewrite' ? (
-                                            <div className="diff-view">
-                                                <h4 style={{ marginBottom: '15px', opacity: 0.8 }}>Improvement Diff</h4>
-                                                <div style={{ background: '#0f172a', padding: '15px', borderRadius: '8px', fontSize: '13px', border: '1px solid #1f2937' }}>
-                                                    {renderDiff()}
+                                        {/* 1. Quality Bar (Check Quality mode only) */}
+                                        {mode === 'review' && (
+                                            <div className="quality-card animated fadeIn">
+                                                <div className="quality-header">
+                                                    <div className="quality-title">
+                                                        <LineChart size={18} />
+                                                        <span>Code Quality Status</span>
+                                                    </div>
+                                                    <span className="quality-value">{score}%</span>
                                                 </div>
-                                            </div>
-                                        ) : (
-                                            <div className="markdown-content">
-                                                <Markdown rehypePlugins={[rehypeHighlight]}>{result}</Markdown>
+                                                <div className="quality-progress-track">
+                                                    <div
+                                                        className="quality-progress-fill"
+                                                        style={{
+                                                            width: `${score}%`,
+                                                            backgroundColor: score > 80 ? '#22c55e' : score > 50 ? '#eab308' : '#ef4444'
+                                                        }}
+                                                    />
+                                                </div>
+                                                <p className="quality-note text-secondary">
+                                                    {score > 80 ? 'Excellent! Code follows best practices.' : 'Quality improved, check findings below.'}
+                                                </p>
                                             </div>
                                         )}
 
+                                        {/* 2. Primary Output/Review/Diff Section */}
+                                        <div className="markdown-content animated slideUp">
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px', color: '#6366f1' }}>
+                                                {mode === 'run' ? <Play size={18} /> : mode === 'rewrite' ? <Sparkles size={18} /> : <Search size={18} />}
+                                                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>
+                                                    {mode === 'run' ? 'Console Output' : mode === 'rewrite' ? 'Improvement Diff' : 'Review Findings'}
+                                                </h3>
+                                            </div>
+                                            
+                                            {mode === 'rewrite' ? (
+                                                <div className="diff-container" style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid #334155' }}>
+                                                    {renderDiff()}
+                                                </div>
+                                            ) : (
+                                                <div className="result-text" style={{ 
+                                                    background: mode === 'run' ? '#0f172a' : 'transparent',
+                                                    padding: mode === 'run' ? '15px' : '0',
+                                                    borderRadius: '8px',
+                                                    fontFamily: mode === 'run' ? 'monospace' : 'inherit'
+                                                }}>
+                                                    <Markdown rehypePlugins={[rehypeHighlight]}>{result}</Markdown>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* 3. AI Explanation (All modes) */}
                                         {explanation && (
-                                            <div className="ai-explanation">
-                                                <h3>🧠 AI Explanation</h3>
-                                                <p>{explanation}</p>
+                                            <div className="ai-explanation animated fadeIn">
+                                                <div className="explanation-header">
+                                                    <Brain size={18} className="brain-icon" />
+                                                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>AI Explanation</h3>
+                                                </div>
+                                                <p style={{ fontSize: '14px', lineHeight: 1.6, opacity: 0.9 }}>{explanation}</p>
                                             </div>
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="placeholder" style={{ textAlign: 'center', marginTop: '100px', opacity: 0.6 }}>
-                                        <h3>Analyze & Improve</h3>
-                                        <p>Select a file above and click Review or Rewrite.</p>
+                                    <div className="placeholder-container">
+                                        <div className="placeholder-graphic">
+                                            <Sparkles size={48} className="placeholder-sparkle" />
+                                        </div>
+                                        <h3 className="placeholder-title">Analyze & Improve</h3>
+                                        <p className="placeholder-text text-secondary">
+                                            Click <b>Check Quality</b> or <b>Rewrite AI</b> to get started with your code review.
+                                        </p>
                                     </div>
                                 )}
                             </div>
                         </>
                     ) : activeTab === 'rewrite' ? (
-                        <div className="page-content" style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+                        <div className="page-content" style={{ width: '100%', height: '100%' }}>
                             <Tools />
+                        </div>
+                    ) : activeTab === 'test' ? (
+                        <div className="page-content" style={{ width: '100%', height: '100%', padding: currentChallenge ? '20px' : '40px', color: darkMode ? '#e2e8f0' : '#1e293b' }}>
+                            {!currentChallenge ? (
+                                <div className="test-card" style={{ background: darkMode ? '#111827' : '#ffffff', padding: '30px', borderRadius: '16px', border: darkMode ? '1px solid #1f2937' : '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+                                    <h1 style={{ fontSize: '24px', marginBottom: '16px', color: '#6366f1' }}>Coding Challenges</h1>
+                                    <p style={{ opacity: 0.7, marginBottom: '24px' }}>Test your skills with our curated algorithmic challenges.</p>
+                                    
+                                    <div style={{ display: 'grid', gap: '20px' }}>
+                                        {/* Challenge 1 */}
+                                        <div style={{ background: darkMode ? '#1e293b' : '#f8fafc', padding: '20px', borderRadius: '12px', border: darkMode ? 'none' : '1px solid #e2e8f0' }}>
+                                            <h3 style={{ fontSize: '18px', marginBottom: '10px' }}>1. Sum of Two Numbers</h3>
+                                            <p style={{ fontSize: '14px', marginBottom: '15px', opacity: 0.8 }}>Write a function <code>sum(a, b)</code> that returns the sum of two integers.</p>
+                                            <button 
+                                                className="btn-run action-btn" 
+                                                style={{ padding: '8px 16px', fontSize: '12px' }}
+                                                onClick={() => {
+                                                    const codeStr = 'function sum(a, b) {\n  // Your code here\n}\n\nconsole.log(sum(5, 10));';
+                                                    setCurrentChallenge({ title: 'Sum of Two Numbers', code: codeStr });
+                                                    setResult(null);
+                                                    setScore(0);
+                                                    setExplanation(null);
+                                                }}
+                                            >Start Challenge</button>
+                                        </div>
+
+                                        {/* Challenge 2 */}
+                                        <div style={{ background: darkMode ? '#1e293b' : '#f8fafc', padding: '20px', borderRadius: '12px', border: darkMode ? 'none' : '1px solid #e2e8f0' }}>
+                                            <h3 style={{ fontSize: '18px', marginBottom: '10px' }}>2. Reverse a String</h3>
+                                            <p style={{ fontSize: '14px', marginBottom: '15px', opacity: 0.8 }}>Write a function <code>reverse(str)</code> that reverses the given string.</p>
+                                            <button 
+                                                className="btn-run action-btn" 
+                                                style={{ padding: '8px 16px', fontSize: '12px' }}
+                                                onClick={() => {
+                                                    const codeStr = 'function reverse(str) {\n  // Your code here\n}\n\nconsole.log(reverse("CodeGenie"));';
+                                                    setCurrentChallenge({ title: 'Reverse a String', code: codeStr });
+                                                    setResult(null);
+                                                    setScore(0);
+                                                    setExplanation(null);
+                                                }}
+                                            >Start Challenge</button>
+                                        </div>
+
+                                        {/* Challenge 3 */}
+                                        <div style={{ background: darkMode ? '#1e293b' : '#f8fafc', padding: '20px', borderRadius: '12px', border: darkMode ? 'none' : '1px solid #e2e8f0' }}>
+                                            <h3 style={{ fontSize: '18px', marginBottom: '10px' }}>3. Palindrome Check</h3>
+                                            <p style={{ fontSize: '14px', marginBottom: '15px', opacity: 0.8 }}>Check if a string is a palindrome (reads the same forward and backward).</p>
+                                            <button 
+                                                className="btn-run action-btn" 
+                                                style={{ padding: '8px 16px', fontSize: '12px' }}
+                                                onClick={() => {
+                                                    const codeStr = 'function isPalindrome(str) {\n  // Your code here\n}\n\nconsole.log(isPalindrome("Racecar"));';
+                                                    setCurrentChallenge({ title: 'Palindrome Check', code: codeStr });
+                                                    setResult(null);
+                                                    setScore(0);
+                                                    setExplanation(null);
+                                                }}
+                                            >Start Challenge</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="active-test-view" style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '20px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <button 
+                                            onClick={() => setCurrentChallenge(null)}
+                                            style={{ background: 'transparent', border: 'none', color: '#6366f1', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}
+                                        >
+                                            ← Back to Challenges
+                                        </button>
+                                        <h2 style={{ margin: 0, fontSize: '20px' }}>{currentChallenge.title}</h2>
+                                        <div style={{ width: '100px' }}></div>
+                                    </div>
+
+                                    <div style={{ flex: 1, display: 'flex', gap: '20px' }}>
+                                        <div style={{ flex: 1.2, background: '#111827', borderRadius: '16px', border: '1px solid #1f2937', overflow: 'hidden' }}>
+                                            <CodeMirror
+                                                value={currentChallenge.code}
+                                                height="100%"
+                                                extensions={[javascript()]}
+                                                theme={oneDark}
+                                                onChange={(value) => setCurrentChallenge({ ...currentChallenge, code: value })}
+                                                basicSetup={{ lineNumbers: true }}
+                                            />
+                                        </div>
+                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                            <button 
+                                                className="btn-review action-btn"
+                                                onClick={() => handleAction("review", currentChallenge.code)}
+                                                disabled={isLoading}
+                                                style={{ width: '100%', padding: '15px', fontSize: '14px' }}
+                                            >
+                                                {isLoading ? 'Calculating Score...' : '🚀 Submit Code & Get Score'}
+                                            </button>
+
+                                            {score > 0 && (
+                                                <div className="quality-card animated fadeIn">
+                                                    <div className="quality-header">
+                                                        <span>Scoring Result</span>
+                                                        <span className="quality-value">{score}%</span>
+                                                    </div>
+                                                    <div className="quality-progress-track">
+                                                        <div 
+                                                            className="quality-progress-fill" 
+                                                            style={{ width: `${score}%`, backgroundColor: score > 80 ? '#22c55e' : '#eab308' }}
+                                                        />
+                                                    </div>
+                                                    <div style={{ marginTop: '15px', padding: '10px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '8px', fontSize: '13px' }}>
+                                                        {explanation}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="page-content" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>

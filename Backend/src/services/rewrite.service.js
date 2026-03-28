@@ -3,7 +3,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_KEY);
 
 const model = genAI.getGenerativeModel({
-  model: "gemini-flash-latest",
+  model: "gemini-2.5-flash",
   systemInstruction: `
 You are a senior software engineer. Rewrite the code professionally, fix bugs, optimize it, and improve readability.
 Return the result in JSON format:
@@ -16,13 +16,14 @@ Return ONLY the JSON. No markdown.
 });
 
 async function generateRewrite(prompt) {
-  const maxRetries = 5;
-  const retryDelay = 5000;
+  const maxRetries = 10;
+  const retryDelay = 10000;
 
   for (let i = 0; i <= maxRetries; i++) {
     try {
       const result = await model.generateContent(prompt);
       const text = result.response.text().trim();
+      console.log(`[Rewrite Service] Raw Output: ${text.substring(0, 500)}...`);
 
       try {
         // Find JSON block even if there is text around it
