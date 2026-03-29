@@ -1,23 +1,20 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Version: 1.0.8-ULTRA - Global Stability Update
+// Version: 1.0.8-PURE - Global Stability Final
 async function tryModels(prompt, isExecution = false) {
     const key = process.env.GOOGLE_GEMINI_KEY || "";
-    const genAI = new GoogleGenerativeAI(key);
+    // FORCE STABLE V1 IN CONSTRUCTOR
+    const genAI = new GoogleGenerativeAI(key, { apiVersion: "v1" });
     
-    // PURE V1 MODELS: No models/ prefix, no legacy names
+    // PURE V1 MODELS
     const MODELS = ["gemini-1.5-flash", "gemini-1.0-pro"];
 
-    console.log(`[AI Stability v1.0.8-ULTRA] Mode: ${isExecution ? 'Execute' : 'Review'}`);
+    console.log(`[AI Stability v1.0.8-PURE] Mode: ${isExecution ? 'Execute' : 'Review'}`);
     
     for (const modelName of MODELS) {
         try {
-            console.log(`[AI Stability] Attempting ${modelName} on API v1...`);
-            
-            const model = genAI.getGenerativeModel({ 
-                model: modelName,
-                apiVersion: 'v1' 
-            });
+            console.log(`[AI Stability] Attempting ${modelName} on Absolute Stable v1...`);
+            const model = genAI.getGenerativeModel({ model: modelName });
             
             const fullPrompt = isExecution 
                 ? `Return JSON { "output": "...", "explanation": "..." } for: \n\n${prompt}`
@@ -46,7 +43,7 @@ async function aiService(code) {
             score: parseInt(parsed.score) || 0
         };
     } catch (err) {
-        throw new Error(`AI v1.0.8-ULTRA Error: ${err.message}`);
+        throw new Error(`AI v1.0.8-PURE Error: ${err.message}`);
     }
 }
 
@@ -58,7 +55,7 @@ aiService.simulateExecution = async (code, language) => {
             explanation: parsed.explanation || "Simulation complete."
         };
     } catch (err) {
-        throw new Error(`Execution v1.0.8-ULTRA Error: ${err.message}`);
+        throw new Error(`Execution v1.0.8-PURE Error: ${err.message}`);
     }
 };
 
