@@ -9,7 +9,7 @@ module.exports.rewriteCode = async (req, res) => {
 
     try {
         const result = await rewriteService(code);
-        res.json(result);
+        res.status(200).json({ success: true, ...result });
     } catch (error) {
         console.error("Rewrite error:", error);
         const status = error.status || 500;

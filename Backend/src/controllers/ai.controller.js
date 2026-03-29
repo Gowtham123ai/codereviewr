@@ -39,7 +39,7 @@ module.exports.execute = async (req, res) => {
     try {
         console.log(`[Execute Controller] Simulating ${language} execution...`);
         const response = await aiService.simulateExecution(code, language);
-        res.json(response);
+        res.json({ success: true, ...response });
     } catch (error) {
         console.error("Controller Error (Execute):", error);
         res.status(500).json({ success: false, message: "AI simulation failed" });

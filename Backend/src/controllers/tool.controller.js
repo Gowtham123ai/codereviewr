@@ -6,10 +6,10 @@ module.exports.explainCode = async (req, res) => {
 
     try {
         const explanation = await toolService(code, "explain");
-        res.json({ explanation });
+        res.json({ success: true, explanation });
     } catch (error) {
         console.error("Explain error:", error);
-        res.status(error.status || 500).json({ error: "Explain failed" });
+        res.status(error.status || 500).json({ success: false, message: "Explain failed" });
     }
 };
 
@@ -19,9 +19,9 @@ module.exports.detectBugs = async (req, res) => {
 
     try {
         const bugs = await toolService(code, "detect-bugs");
-        res.json({ bugs });
+        res.json({ success: true, bugs });
     } catch (error) {
         console.error("Bug detection error:", error);
-        res.status(error.status || 500).json({ error: "Bug detection failed" });
+        res.status(error.status || 500).json({ success: false, message: "Bug detection failed" });
     }
 };
