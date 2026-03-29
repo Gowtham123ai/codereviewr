@@ -2,6 +2,7 @@
   "version": 2,
   "rewrites": [
     { "source": "/ai/get-review", "destination": "/api/get-review.js" },
+    { "source": "/api/list-models", "destination": "/api/list-models.js" },
     { "source": "/ai/execute", "destination": "/api/execute.js" },
     { "source": "/api/rewrite", "destination": "/api/rewrite.js" },
     { "source": "/api/tools/explain", "destination": "/api/tools.js" },

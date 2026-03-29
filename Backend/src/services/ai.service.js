@@ -1,23 +1,30 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Version: 1.2.0-ULTIMATE - Intelligent Model Discovery
+// Version: 1.3.0-RECON - Master Model Probe
 async function tryModels(prompt, isExecution = false) {
     const key = process.env.GOOGLE_GEMINI_KEY || "";
+    if (!key) throw new Error("API Key is missing in Vercel environment variables.");
+    
+    // Log masked key for diagnostic (e.g. AIz... ending in XY)
+    const maskedKey = `${key.substring(0, 4)}...${key.substring(key.length - 2)}`;
+    console.log(`[AI RECON] Using Key: ${maskedKey}`);
+
     const genAI = new GoogleGenerativeAI(key);
     
-    // TRIPLE-LANE PROBE: Trying all valid combinations for your API key
+    // RECON PROBE: Trying the absolute widest net of model IDs and lanes
     const PROBES = [
+        { model: "gemini-1.5-flash-latest", version: "v1" },
         { model: "gemini-1.5-flash", version: "v1" },
         { model: "gemini-1.5-flash", version: "v1beta" },
+        { model: "gemini-1.0-pro", version: "v1" },
         { model: "gemini-pro", version: "v1" }
     ];
 
-    console.log(`[AI ULTIMATE v1.2.0] Discovery Probing Started...`);
+    console.log(`[AI RECON v1.3.0] Searching for a valid model path...`);
     
     for (const probe of PROBES) {
         try {
-            console.log(`[AI Probe] Testing ${probe.model} on lane ${probe.version}...`);
-            
+            console.log(`[RECON Probe] Testing ${probe.model} [${probe.version}]...`);
             const model = genAI.getGenerativeModel(
                 { model: probe.model },
                 { apiVersion: probe.version }
@@ -33,11 +40,10 @@ async function tryModels(prompt, isExecution = false) {
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text.replace(/```json|```/g, "").trim());
             
-            console.log(`[AI Probe] SUCCESS on ${probe.model} (${probe.version})!`);
+            console.log(`[RECON Probe] CRITICAL SUCCESS on ${probe.model} (${probe.version})!`);
             return parsed;
         } catch (error) {
-            console.warn(`[AI Probe] Lane ${probe.version} (${probe.model}) - Failed:`, error.message);
-            // If it's the last probe, we've exhausted all options
+            console.warn(`[RECON Probe] ${probe.model} [${probe.version}] FAILED:`, error.message);
             if (probe === PROBES[PROBES.length - 1]) throw error;
         }
     }
@@ -52,7 +58,7 @@ async function aiService(code) {
             score: parseInt(parsed.score) || 0
         };
     } catch (err) {
-        throw new Error(`AI v1.2.0-ULTIMATE Error: ${err.message}`);
+        throw new Error(`AI v1.3.0-RECON Error: ${err.message}`);
     }
 }
 
@@ -64,7 +70,7 @@ aiService.simulateExecution = async (code, language) => {
             explanation: parsed.explanation || "Simulation complete."
         };
     } catch (err) {
-        throw new Error(`Execution v1.2.0-ULTIMATE Error: ${err.message}`);
+        throw new Error(`Execution v1.3.0-RECON Error: ${err.message}`);
     }
 };
 
