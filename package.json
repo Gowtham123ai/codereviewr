@@ -8,6 +8,13 @@
     "frontend": "cd frontend && npm run dev",
     "test": "cd Backend && npm test"
   },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "ngrok": "^5.0.0-beta.2"
+  },
   "devDependencies": {
     "concurrently": "^8.2.2"
   }
