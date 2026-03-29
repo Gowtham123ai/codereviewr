@@ -1,32 +1,26 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Version: 1.0.6 - API v1 Compatibility Update
+// Version: 1.0.8-ULTRA - Global Stability Update
 async function tryModels(prompt, isExecution = false) {
     const key = process.env.GOOGLE_GEMINI_KEY || "";
-    
-    // FORCING v1 API VERSION: This is the most compatible way for all Google AI Studio keys
     const genAI = new GoogleGenerativeAI(key);
     
-    const MODELS = [
-        "gemini-1.5-flash",    // Standard v1 name
-        "gemini-1.0-pro",      // Pro v1 name
-        "gemini-pro"           // Pro fallback
-    ];
+    // PURE V1 MODELS: No models/ prefix, no legacy names
+    const MODELS = ["gemini-1.5-flash", "gemini-1.0-pro"];
 
-    console.log(`[AI Stability v1.0.6] Mode: ${isExecution ? 'Execute' : 'Review'} | Env: ${process.env.VERCEL_ENV || "Dev"}`);
+    console.log(`[AI Stability v1.0.8-ULTRA] Mode: ${isExecution ? 'Execute' : 'Review'}`);
     
     for (const modelName of MODELS) {
         try {
             console.log(`[AI Stability] Attempting ${modelName} on API v1...`);
             
-            // Using the specific v1 version of the client if possible
             const model = genAI.getGenerativeModel({ 
                 model: modelName,
-                apiVersion: 'v1' // Force stable API version
+                apiVersion: 'v1' 
             });
             
             const fullPrompt = isExecution 
-                ? `Return JSON { "output": "...", "explanation": "..." } for this ${isExecution} code: \n\n${prompt}`
+                ? `Return JSON { "output": "...", "explanation": "..." } for: \n\n${prompt}`
                 : `Review code. Return JSON { "review": "...", "explanation": "...", "score": 0-100 }. Code: \n\n${prompt}`;
             
             const result = await model.generateContent(fullPrompt);
@@ -47,12 +41,12 @@ async function aiService(code) {
     try {
         const parsed = await tryModels(code, false);
         return {
-            review: parsed.review || "Success",
-            explanation: parsed.explanation || "Analysis finished.",
+            review: parsed.review || "Review Success",
+            explanation: parsed.explanation || "No issues found.",
             score: parseInt(parsed.score) || 0
         };
     } catch (err) {
-        throw new Error(`AI v1 Error [1.0.6]: ${err.message}`);
+        throw new Error(`AI v1.0.8-ULTRA Error: ${err.message}`);
     }
 }
 
@@ -64,7 +58,7 @@ aiService.simulateExecution = async (code, language) => {
             explanation: parsed.explanation || "Simulation complete."
         };
     } catch (err) {
-        throw new Error(`Execution Error [1.0.6]: ${err.message}`);
+        throw new Error(`Execution v1.0.8-ULTRA Error: ${err.message}`);
     }
 };
 
