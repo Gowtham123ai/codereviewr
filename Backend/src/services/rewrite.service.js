@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Version: 1.2.0-ULTIMATE - Intelligent Model Discovery
-async function generateRewrite(prompt) {
+// Version: 1.2.1-ULTIMATE - Intelligent Model Discovery (Direct Export)
+async function rewriteService(prompt) {
     const key = process.env.GOOGLE_GEMINI_KEY || "";
     const genAI = new GoogleGenerativeAI(key);
     
@@ -32,9 +32,9 @@ async function generateRewrite(prompt) {
             };
         } catch (error) {
             console.warn(`[Rewrite Probe] Lane ${probe.version} (${probe.model}) - Failed:`, error.message);
-            if (probe === PROBES[PROBES.length - 1]) throw new Error(`Rewrite v1.2.0-ULTIMATE Error: ${error.message}`);
+            if (probe === PROBES[PROBES.length - 1]) throw new Error(`Rewrite v1.2.1-ULTIMATE Error: ${error.message}`);
         }
     }
 }
 
-module.exports = { generateRewrite };
+module.exports = rewriteService;

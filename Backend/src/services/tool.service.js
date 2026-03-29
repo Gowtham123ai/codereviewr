@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Version: 1.2.0-ULTIMATE - Intelligent Model Discovery
-async function useTool(toolName, code) {
+// Version: 1.2.1-ULTIMATE - Intelligent Model Discovery (Direct Export)
+async function toolService(code, toolName) {
     const key = process.env.GOOGLE_GEMINI_KEY || "";
     const genAI = new GoogleGenerativeAI(key);
     
@@ -27,15 +27,14 @@ async function useTool(toolName, code) {
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text.replace(/```json|```/g, "").trim());
             
-            return {
-                result: parsed.result || text,
-                explanation: parsed.explanation || "Tool processed successfully"
-            };
+            // Format result to match controller requirements
+            const finalResult = parsed.result || text;
+            return finalResult;
         } catch (error) {
             console.warn(`[Tool Probe] Lane ${probe.version} (${probe.model}) - Failed:`, error.message);
-            if (probe === PROBES[PROBES.length - 1]) throw new Error(`Tool v1.2.0-ULTIMATE Error: ${error.message}`);
+            if (probe === PROBES[PROBES.length - 1]) throw new Error(`Tool v1.2.1-ULTIMATE Error: ${error.message}`);
         }
     }
 }
 
-module.exports = { useTool };
+module.exports = toolService;
