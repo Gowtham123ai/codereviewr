@@ -148,7 +148,8 @@ export default function Dashboard({ darkMode, setDarkMode }) {
             setUsageCount(prev => prev + 1);
         } catch (err) {
             console.error(`[Dashboard] ${type} error:`, err);
-            setError(err.response?.data?.message || "Something went wrong. Please try again.");
+            const detailMsg = err.response?.data?.message || err.response?.data || err.message;
+            setError(`AI Service: ${detailMsg}`);
         } finally {
             setIsLoading(false);
         }
