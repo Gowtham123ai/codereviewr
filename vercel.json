@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "outputDirectory": "frontend/dist",
   "rewrites": [
     { "source": "/ai/get-review", "destination": "/api/get-review.js" },
     { "source": "/ai/execute", "destination": "/api/execute.js" },
