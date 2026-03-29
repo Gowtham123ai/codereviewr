@@ -1,22 +1,18 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Initialize Gemini safely
 const key = process.env.GOOGLE_GEMINI_KEY || "";
-console.log("[AI Service] Initializing with key present:", !!key);
-
 const genAI = new GoogleGenerativeAI(key);
+
+// Using the FULL model path to bypass authorization quirks
+const MODEL_NAME = "models/gemini-1.5-flash";
 
 async function aiService(code) {
   try {
-    // Basic model initialization without system instructions
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+    const prompt = `Review this code and return JSON: { "review": "findings", "explanation": "summary", "score": 0-100 }. Code:\n\n${code}`;
     
-    const prompt = `Review this code for quality, bugs, and improvements. Return only JSON: { "review": "markdown findings", "explanation": "summary", "score": 0-100 }. Code:\n\n${code}`;
-    
-    console.log("[AI Service] Sending basic prompt to Gemini Pro...");
     const result = await model.generateContent(prompt);
     const text = result.response.text();
-    
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text.replace(/```json|```/g, "").trim());
     
@@ -26,29 +22,21 @@ async function aiService(code) {
       score: parsed.score || 0
     };
   } catch (error) {
-    console.error("[AI Service] Runtime Error:", error.message);
-    throw error;
+    console.error(`[AI Service] Error:`, error.message);
+    // Return a more descriptive error for the UI
+    throw new Error(`AI Gateway Error: ${error.message}`);
   }
 }
 
 aiService.simulateExecution = async (code, language) => {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    const prompt = `Simulate console output for this ${language} code and return only JSON: { "output": "result string", "explanation": "note" }. Code:\n\n${code}`;
-    
-    const result = await model.generateContent(prompt);
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+    const result = await model.generateContent(`Simulate ${language} output. Return JSON: { "output": "...", "explanation": "..." }. Code:\n\n${code}`);
     const text = result.response.text();
-    
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text.replace(/```json|```/g, "").trim());
-    
-    return {
-      output: parsed.output || text,
-      explanation: parsed.explanation || `Simulated ${language} execution.`
-    };
-  } catch (error) {
-    console.error("[AI Service] Simulation Error:", error.message);
-    throw error;
+    return JSON.parse(jsonMatch ? jsonMatch[0] : text.replace(/```json|```/g, "").trim());
+  } catch (e) {
+    throw new Error(`Simulation Error: ${e.message}`);
   }
 };
 
