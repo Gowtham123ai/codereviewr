@@ -1,6 +1,6 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Version: 1.5.0-STABLE - Rate-Limit Resilient Engine
+// Version: 1.5.1-SYNC - Universal Rate-Limit Resilient Engine
 async function tryModels(prompt, isExecution = false) {
     const key = process.env.GOOGLE_GEMINI_KEY || "";
     const genAI = new GoogleGenerativeAI(key);
