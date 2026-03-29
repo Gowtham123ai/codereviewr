@@ -1,20 +1,24 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Version: 1.0.8-PURE - Global Stability Final
+// Version: 1.0.9-SUPREME - Absolute Stability Final
 async function tryModels(prompt, isExecution = false) {
     const key = process.env.GOOGLE_GEMINI_KEY || "";
-    // FORCE STABLE V1 IN CONSTRUCTOR
-    const genAI = new GoogleGenerativeAI(key, { apiVersion: "v1" });
+    const genAI = new GoogleGenerativeAI(key);
     
-    // PURE V1 MODELS
-    const MODELS = ["gemini-1.5-flash", "gemini-1.0-pro"];
+    // SUPREME V1 MODELS: Flash is the goat for stable v1.
+    const MODELS = ["gemini-1.5-flash"];
 
-    console.log(`[AI Stability v1.0.8-PURE] Mode: ${isExecution ? 'Execute' : 'Review'}`);
+    console.log(`[AI Stability v1.0.9-SUPREME] Mode: ${isExecution ? 'Execute' : 'Review'}`);
     
     for (const modelName of MODELS) {
         try {
             console.log(`[AI Stability] Attempting ${modelName} on Absolute Stable v1...`);
-            const model = genAI.getGenerativeModel({ model: modelName });
+            
+            // OFFICIAL SYNTAX: Pass apiVersion as 2nd argument to getGenerativeModel
+            const model = genAI.getGenerativeModel(
+                { model: modelName },
+                { apiVersion: "v1" }
+            );
             
             const fullPrompt = isExecution 
                 ? `Return JSON { "output": "...", "explanation": "..." } for: \n\n${prompt}`
@@ -43,7 +47,7 @@ async function aiService(code) {
             score: parseInt(parsed.score) || 0
         };
     } catch (err) {
-        throw new Error(`AI v1.0.8-PURE Error: ${err.message}`);
+        throw new Error(`AI v1.0.9-SUPREME Error: ${err.message}`);
     }
 }
 
@@ -55,7 +59,7 @@ aiService.simulateExecution = async (code, language) => {
             explanation: parsed.explanation || "Simulation complete."
         };
     } catch (err) {
-        throw new Error(`Execution v1.0.8-PURE Error: ${err.message}`);
+        throw new Error(`Execution v1.0.9-SUPREME Error: ${err.message}`);
     }
 };
 
