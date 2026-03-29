@@ -42,6 +42,7 @@ module.exports.execute = async (req, res) => {
         res.json({ success: true, ...response });
     } catch (error) {
         console.error("Controller Error (Execute):", error);
-        res.status(500).json({ success: false, message: "AI simulation failed" });
+        const status = error.status || 500;
+        res.status(status).json({ success: false, message: error.message });
     }
 }
