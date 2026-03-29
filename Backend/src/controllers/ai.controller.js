@@ -31,3 +31,17 @@ module.exports.getReview = async (req, res) => {
         });
     }
 }
+
+module.exports.execute = async (req, res) => {
+    const { code, language } = req.body;
+    if (!code) return res.status(400).send("Code is required");
+
+    try {
+        console.log(`[Execute Controller] Simulating ${language} execution...`);
+        const response = await aiService.simulateExecution(code, language);
+        res.json(response);
+    } catch (error) {
+        console.error("Controller Error (Execute):", error);
+        res.status(500).json({ success: false, message: "AI simulation failed" });
+    }
+}

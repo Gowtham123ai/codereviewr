@@ -59,39 +59,56 @@ export default function Dashboard({ darkMode, setDarkMode }) {
         localStorage.setItem("history", JSON.stringify(updated));
     };
 
-    const handleRunCode = () => {
+    const handleRunCode = async () => {
         setIsLoading(true);
         setError(null);
         setMode("run");
         
-        // Use a small delay to simulate execution and allow the UI to update
-        setTimeout(() => {
-            try {
-                const logCapture = [];
-                const mockConsole = {
-                    log: (...args) => logCapture.push(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '))
-                };
-                
-                // Stable JS runner
-                const runFunc = new Function('console', 'codeContents', 'try { eval(codeContents); } catch(e) { console.log("Error: " + e.message); }');
-                runFunc(mockConsole, code);
-                
-                const outputText = logCapture.length > 0 
-                    ? logCapture.join('\n') 
-                    : "Code executed successfully. (No output to console)";
+        if (language === 'javascript') {
+            // Stable JS runner for local execution
+            setTimeout(() => {
+                try {
+                    const logCapture = [];
+                    const mockConsole = {
+                        log: (...args) => logCapture.push(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '))
+                    };
                     
-                setResult(outputText);
-                setExplanation("Code was executed in your local browser sandbox.");
+                    const runFunc = new Function('console', 'codeContents', 'try { eval(codeContents); } catch(e) { console.log("Error: " + e.message); }');
+                    runFunc(mockConsole, code);
+                    
+                    const outputText = logCapture.length > 0 
+                        ? logCapture.join('\n') 
+                        : "Code executed successfully. (No output to console)";
+                        
+                    setResult(outputText);
+                    setExplanation("Code was executed in your local browser sandbox.");
+                    setScore(100);
+                    saveToHistory("run", outputText);
+                } catch (err) {
+                    setResult(`Execution Failed: ${err.message}`);
+                    setError(`Execution error: ${err.message}`);
+                    setScore(0);
+                } finally {
+                    setIsLoading(false);
+                }
+            }, 800);
+        } else {
+            // AI-Powered Simulation for Java, Python, etc.
+            const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
+            try {
+                const response = await axios.post(`${baseUrl}/ai/execute`, { code, language });
+                setResult(response.data.output);
+                setExplanation(response.data.explanation || `Simulated ${language} execution using AI.`);
                 setScore(100);
-                saveToHistory("run", outputText);
+                saveToHistory("run", response.data.output);
             } catch (err) {
-                setResult(`Execution Failed: ${err.message}`);
-                setError(`Execution error: ${err.message}`);
-                setScore(0);
+                console.error("[Dashboard] Execution error:", err);
+                setError("AI failed to simulate code execution. Please try again.");
+                setResult("Execution Error");
             } finally {
                 setIsLoading(false);
             }
-        }, 800);
+        }
     };
 
     const handleAction = async (type, forcedCode = null) => {
