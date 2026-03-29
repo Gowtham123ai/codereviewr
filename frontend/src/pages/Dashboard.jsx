@@ -94,7 +94,7 @@ export default function Dashboard({ darkMode, setDarkMode }) {
             }, 800);
         } else {
             // AI-Powered Simulation for Java, Python, etc.
-            const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
+            const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
             try {
                 const response = await axios.post(`${baseUrl}/ai/execute`, { code, language });
                 setResult(response.data.output);
@@ -128,7 +128,7 @@ export default function Dashboard({ darkMode, setDarkMode }) {
             return;
         }
 
-        const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, ""); 
+        const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, ""); 
         const endpoint = type === "rewrite"
             ? `${baseUrl}/api/rewrite`
             : `${baseUrl}/ai/get-review`;
@@ -287,7 +287,7 @@ export default function Dashboard({ darkMode, setDarkMode }) {
                 <div className="main">
                     {error && (
                         <div className="error-box" style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100 }}>
-                            <span style={{ fontSize: '10px', verticalAlign: 'middle', marginRight: '8px', opacity: 0.7 }}>v1.0.5</span>
+                            <span style={{ fontSize: '10px', verticalAlign: 'middle', marginRight: '8px', opacity: 0.7 }}>v1.0.7-FIX</span>
                             <span>⚠️</span>
                             <span>{error}</span>
                         </div>

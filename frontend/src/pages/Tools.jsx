@@ -14,10 +14,11 @@ export default function Tools() {
         setResult("");
         setError(null);
 
+        const baseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
         const endpoint =
             type === "explain"
-                ? `${import.meta.env.VITE_API_URL}/api/tools/explain`
-                : `${import.meta.env.VITE_API_URL}/api/tools/detect-bugs`;
+                ? `${baseUrl}/api/tools/explain`
+                : `${baseUrl}/api/tools/detect-bugs`;
 
         try {
             const res = await axios.post(endpoint, { code });
