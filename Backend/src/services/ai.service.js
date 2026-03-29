@@ -3,13 +3,16 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const key = process.env.GOOGLE_GEMINI_KEY || "";
 const genAI = new GoogleGenerativeAI(key);
 
-// FALLBACK SEQUENCE: 1.5-flash -> 1.0-pro -> pro
-const MODELS = ["models/gemini-1.5-flash", "models/gemini-1.0-pro", "gemini-pro"];
+// Using 1.0-pro as the PRIMARY for ultimate compatibility with restricted keys
+const MODELS = ["gemini-pro", "models/gemini-1.5-flash", "models/gemini-1.0-pro"];
 
 async function tryModels(prompt, isExecution = false) {
+    // Diagnostic log for regions
+    console.log(`[AI Service] Region: ${process.env.VERCEL_REGION || "Local"} | Vercel Env: ${process.env.VERCEL_ENV || "Dev"}`);
+    
     for (const modelName of MODELS) {
         try {
-            console.log(`[AI Service] Attempting request with ${modelName}...`);
+            console.log(`[AI Service] Attempting ${modelName}...`);
             const model = genAI.getGenerativeModel({ model: modelName });
             
             const fullPrompt = isExecution 
@@ -21,11 +24,11 @@ async function tryModels(prompt, isExecution = false) {
             
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text.replace(/```json|```/g, "").trim());
-            console.log(`[AI Service] SUCCESS with ${modelName}!`);
+            console.log(`[AI Service] Success with ${modelName}!`);
             return parsed;
         } catch (error) {
-            console.warn(`[AI Service] FAILED with ${modelName}:`, error.message);
-            if (modelName === MODELS[MODELS.length - 1]) throw error; // Re-throw if last attempt
+            console.warn(`[AI Service] Fail with ${modelName}:`, error.message);
+            if (modelName === MODELS[MODELS.length - 1]) throw error;
         }
     }
 }
@@ -34,24 +37,24 @@ async function aiService(code) {
     try {
         const parsed = await tryModels(code, false);
         return {
-            review: parsed.review || "Success",
-            explanation: parsed.explanation || "Review complete",
+            review: parsed.review || "Reviewed",
+            explanation: parsed.explanation || "Complete",
             score: parsed.score || 0
         };
     } catch (err) {
-        throw new Error(`AI Gateway exhausted all models: ${err.message}`);
+        throw new Error(`AI Critical Error: ${err.message}`);
     }
 }
 
 aiService.simulateExecution = async (code, language) => {
     try {
-        const parsed = await tryModels(`Language: ${language}\n${code}`, true);
+        const parsed = await tryModels(`Lang: ${language}\n${code}`, true);
         return {
-            output: parsed.output || "Finished",
-            explanation: parsed.explanation || `Simulated ${language} execution.`
+            output: parsed.output || "Done",
+            explanation: parsed.explanation || `Simulated ${language}.`
         };
     } catch (err) {
-        throw new Error(`Simulation exhausted all models: ${err.message}`);
+        throw new Error(`Sim Error: ${err.message}`);
     }
 };
 
