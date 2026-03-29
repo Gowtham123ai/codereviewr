@@ -287,7 +287,7 @@ export default function Dashboard({ darkMode, setDarkMode }) {
                 <div className="main">
                     {error && (
                         <div className="error-box" style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 100 }}>
-                            <span style={{ fontSize: '10px', verticalAlign: 'middle', marginRight: '8px', opacity: 0.7 }}>v1.0.7-FIX</span>
+                            <span style={{ fontSize: '10px', verticalAlign: 'middle', marginRight: '8px', opacity: 0.7 }}>v1.0.8-PURE</span>
                             <span>⚠️</span>
                             <span>{error}</span>
                         </div>

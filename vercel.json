@@ -1,10 +1,11 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "framework": "vite",
+  "version": 2,
   "rewrites": [
-    { "source": "/ai/(.*)", "destination": "/api/index.js" },
-    { "source": "/api/(.*)", "destination": "/api/index.js" },
+    { "source": "/ai/get-review", "destination": "/api/get-review.js" },
+    { "source": "/ai/execute", "destination": "/api/execute.js" },
+    { "source": "/api/rewrite", "destination": "/api/rewrite.js" },
+    { "source": "/api/tools/explain", "destination": "/api/tools.js" },
+    { "source": "/api/tools/detect-bugs", "destination": "/api/tools.js" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
