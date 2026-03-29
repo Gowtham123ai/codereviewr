@@ -115,16 +115,20 @@ export default function Dashboard({ darkMode, setDarkMode }) {
         const targetCode = forcedCode || code;
         if (!targetCode?.trim()) return;
         
+        // Reset results first to prevent "Ghost Results" from previous clicks
+        setResult(null);
+        setExplanation(null);
+        setError(null);
+        setScore(0);
+        setIsLoading(true);
+        setMode(type);
+
         if (type === "run") {
             handleRunCode();
             return;
         }
 
-        setIsLoading(true);
-        setError(null);
-        setMode(type);
-
-        const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, ""); // Clean any trailing slash
+        const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, ""); 
         const endpoint = type === "rewrite"
             ? `${baseUrl}/api/rewrite`
             : `${baseUrl}/ai/get-review`;
@@ -132,6 +136,11 @@ export default function Dashboard({ darkMode, setDarkMode }) {
         try {
             const response = await axios.post(endpoint, { code: targetCode, language });
             const data = response.data;
+            
+            if (!data.success) {
+                setError(data.message || "AI service failed");
+                return;
+            }
 
             if (type === "rewrite") {
                 const rewrittenCode = data.rewrittenCode || data.improvedCode;
@@ -409,9 +418,11 @@ export default function Dashboard({ darkMode, setDarkMode }) {
                                             ) : (
                                                 <div className="result-text" style={{ 
                                                     background: mode === 'run' ? '#0f172a' : 'transparent',
+                                                    color: mode === 'run' ? '#f8fafc' : 'inherit',
                                                     padding: mode === 'run' ? '15px' : '0',
                                                     borderRadius: '8px',
-                                                    fontFamily: mode === 'run' ? 'monospace' : 'inherit'
+                                                    fontFamily: mode === 'run' ? 'monospace' : 'inherit',
+                                                    minHeight: mode === 'run' ? '60px' : 'auto'
                                                 }}>
                                                     <Markdown rehypePlugins={[rehypeHighlight]}>{result}</Markdown>
                                                 </div>
