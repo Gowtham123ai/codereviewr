@@ -1,25 +1,20 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Initialize Gemini with the API KEY
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_KEY || "");
+// Initialize Gemini safely
+const key = process.env.GOOGLE_GEMINI_KEY || "";
+console.log("[AI Service] Initializing with key present:", !!key);
 
-// CONFIG: Using only stable 1.5-flash for maximum authorization compatibility
-const MODEL_NAME = "gemini-1.5-flash";
-
-const reviewModel = genAI.getGenerativeModel({
-  model: MODEL_NAME,
-  systemInstruction: "You are a Senior Software Engineer. Review the code and return only a JSON object: { \"review\": \"markdown findings\", \"explanation\": \"summary\", \"score\": 0-100 }."
-});
-
-const executeModel = genAI.getGenerativeModel({
-  model: MODEL_NAME,
-  systemInstruction: "You are a code simulator. Simulate output and return only JSON: { \"output\": \"result\", \"explanation\": \"note\" }."
-});
+const genAI = new GoogleGenerativeAI(key);
 
 async function aiService(code) {
   try {
-    console.log(`[AI Service] Starting review with ${MODEL_NAME}...`);
-    const result = await reviewModel.generateContent(code);
+    // Basic model initialization without system instructions
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    
+    const prompt = `Review this code for quality, bugs, and improvements. Return only JSON: { "review": "markdown findings", "explanation": "summary", "score": 0-100 }. Code:\n\n${code}`;
+    
+    console.log("[AI Service] Sending basic prompt to Gemini Pro...");
+    const result = await model.generateContent(prompt);
     const text = result.response.text();
     
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -27,19 +22,21 @@ async function aiService(code) {
     
     return {
       review: parsed.review || text,
-      explanation: parsed.explanation || "Review successful.",
+      explanation: parsed.explanation || "Review complete.",
       score: parsed.score || 0
     };
   } catch (error) {
-    console.error(`[AI Service] Review Error (${MODEL_NAME}):`, error.message);
+    console.error("[AI Service] Runtime Error:", error.message);
     throw error;
   }
 }
 
 aiService.simulateExecution = async (code, language) => {
   try {
-    console.log(`[AI Service] Starting simulation with ${MODEL_NAME}...`);
-    const result = await executeModel.generateContent(`Language: ${language}\nCode:\n${code}`);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const prompt = `Simulate console output for this ${language} code and return only JSON: { "output": "result string", "explanation": "note" }. Code:\n\n${code}`;
+    
+    const result = await model.generateContent(prompt);
     const text = result.response.text();
     
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -50,7 +47,7 @@ aiService.simulateExecution = async (code, language) => {
       explanation: parsed.explanation || `Simulated ${language} execution.`
     };
   } catch (error) {
-    console.error(`[AI Service] Simulation Error (${MODEL_NAME}):`, error.message);
+    console.error("[AI Service] Simulation Error:", error.message);
     throw error;
   }
 };
