@@ -1,21 +1,23 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Version: 1.0.9-SUPREME - Absolute Stability Final
+// Version: 1.2.0-ULTIMATE - Intelligent Model Discovery
 async function generateRewrite(prompt) {
     const key = process.env.GOOGLE_GEMINI_KEY || "";
     const genAI = new GoogleGenerativeAI(key);
     
-    // SUPREME V1 MODELS
-    const MODELS = ["gemini-1.5-flash"];
+    // TRIPLE-LANE PROBE: Trying all valid combinations for your API key
+    const PROBES = [
+        { model: "gemini-1.5-flash", version: "v1" },
+        { model: "gemini-1.5-flash", version: "v1beta" },
+        { model: "gemini-pro", version: "v1" }
+    ];
 
-    for (const modelName of MODELS) {
+    for (const probe of PROBES) {
         try {
-            console.log(`[Rewrite Service v1.0.9-SUPREME] Using ${modelName} on Absolute Stable v1...`);
-            
-            // OFFICIAL SYNTAX: Pass apiVersion as 2nd argument
+            console.log(`[Rewrite Probe] Testing ${probe.model} on lane ${probe.version}...`);
             const model = genAI.getGenerativeModel(
-                { model: modelName },
-                { apiVersion: "v1" }
+                { model: probe.model },
+                { apiVersion: probe.version }
             );
             
             const result = await model.generateContent(`Rewrite this code and return JSON: { "rewrittenCode": "...", "explanation": "..." }. Code:\n\n${prompt}`);
@@ -29,8 +31,8 @@ async function generateRewrite(prompt) {
                 explanation: parsed.explanation || "Rewrite successful"
             };
         } catch (error) {
-            console.warn(`[Rewrite Service v1.0.9-SUPREME] FAILED with ${modelName}:`, error.message);
-            if (modelName === MODELS[MODELS.length - 1]) throw new Error(`Rewrite v1.0.9-SUPREME Error: ${error.message}`);
+            console.warn(`[Rewrite Probe] Lane ${probe.version} (${probe.model}) - Failed:`, error.message);
+            if (probe === PROBES[PROBES.length - 1]) throw new Error(`Rewrite v1.2.0-ULTIMATE Error: ${error.message}`);
         }
     }
 }

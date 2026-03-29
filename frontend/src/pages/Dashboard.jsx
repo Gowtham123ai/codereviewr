@@ -31,7 +31,7 @@ export default function Dashboard({ darkMode, setDarkMode }) {
     const [language, setLanguage] = useState("javascript")
     const [usageCount, setUsageCount] = useState(0)
     const [mode, setMode] = useState("review")
-    const [version] = useState("v1.1.0-STABLE");
+    const [version] = useState("v1.2.0-ULTIMATE");
     const [score, setScore] = useState(0)
     const [currentChallenge, setCurrentChallenge] = useState(null)
     const navigate = useNavigate()

@@ -1,23 +1,26 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Version: 1.1.0-STABLE - Final API Bridge
+// Version: 1.2.0-ULTIMATE - Intelligent Model Discovery
 async function tryModels(prompt, isExecution = false) {
     const key = process.env.GOOGLE_GEMINI_KEY || "";
     const genAI = new GoogleGenerativeAI(key);
     
-    // STABLE MODELS: Flash is the primary, Pro as fallback
-    const MODELS = ["gemini-1.5-flash", "gemini-pro"];
+    // TRIPLE-LANE PROBE: Trying all valid combinations for your API key
+    const PROBES = [
+        { model: "gemini-1.5-flash", version: "v1" },
+        { model: "gemini-1.5-flash", version: "v1beta" },
+        { model: "gemini-pro", version: "v1" }
+    ];
 
-    console.log(`[AI Stability v1.1.0-STABLE] Mode: ${isExecution ? 'Execute' : 'Review'}`);
+    console.log(`[AI ULTIMATE v1.2.0] Discovery Probing Started...`);
     
-    for (const modelName of MODELS) {
+    for (const probe of PROBES) {
         try {
-            console.log(`[AI Stability] Attempting ${modelName} via v1beta bridge...`);
+            console.log(`[AI Probe] Testing ${probe.model} on lane ${probe.version}...`);
             
-            // BRIDGE SYNTAX: Use v1beta for Gemini 1.5 Flash compatibility
             const model = genAI.getGenerativeModel(
-                { model: modelName },
-                { apiVersion: "v1beta" }
+                { model: probe.model },
+                { apiVersion: probe.version }
             );
             
             const fullPrompt = isExecution 
@@ -30,10 +33,12 @@ async function tryModels(prompt, isExecution = false) {
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text.replace(/```json|```/g, "").trim());
             
+            console.log(`[AI Probe] SUCCESS on ${probe.model} (${probe.version})!`);
             return parsed;
         } catch (error) {
-            console.warn(`[AI Stability] Error with ${modelName}:`, error.message);
-            if (modelName === MODELS[MODELS.length - 1]) throw error;
+            console.warn(`[AI Probe] Lane ${probe.version} (${probe.model}) - Failed:`, error.message);
+            // If it's the last probe, we've exhausted all options
+            if (probe === PROBES[PROBES.length - 1]) throw error;
         }
     }
 }
@@ -47,7 +52,7 @@ async function aiService(code) {
             score: parseInt(parsed.score) || 0
         };
     } catch (err) {
-        throw new Error(`AI v1.1.0-STABLE Error: ${err.message}`);
+        throw new Error(`AI v1.2.0-ULTIMATE Error: ${err.message}`);
     }
 }
 
@@ -59,7 +64,7 @@ aiService.simulateExecution = async (code, language) => {
             explanation: parsed.explanation || "Simulation complete."
         };
     } catch (err) {
-        throw new Error(`Execution v1.1.0-STABLE Error: ${err.message}`);
+        throw new Error(`Execution v1.2.0-ULTIMATE Error: ${err.message}`);
     }
 };
 
