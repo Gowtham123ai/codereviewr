@@ -1,10 +1,11 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_KEY);
-
-const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash",
-  systemInstruction: `
+// Version: 1.1.0-STABLE - Webhook AI
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_KEY || "");
+const model = genAI.getGenerativeModel(
+    { 
+        model: "gemini-1.5-flash",
+        systemInstruction: `
 You are an Automated GitHub Assistant. Your job is to analyze incoming Webhook events (like Pushes and Pull Requests) and provide a professional, helpful review of the activity.
 
 When reviewing a **Push event**, you should:
@@ -24,7 +25,9 @@ Return your response in JSON format:
 }
 Return ONLY the JSON. No markdown wrappers.
 `
-});
+    },
+    { apiVersion: "v1beta" }
+);
 
 async function reviewWebhookEvent(payload, eventType) {
     let prompt = "";
@@ -51,16 +54,19 @@ async function reviewWebhookEvent(payload, eventType) {
 
     try {
         const result = await model.generateContent(prompt);
-        const text = result.response.text().trim();
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        const jsonStr = jsonMatch ? jsonMatch[0] : text;
-        return JSON.parse(jsonStr.replace(/```json|```/g, ""));
+        const responseText = result.response.text();
+        
+        // Match the JSON block if AI wraps it in markdown
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : responseText);
+        
+        return parsed;
     } catch (error) {
-        console.error("Webhook AI Review Error:", error);
-        return { 
-            event_review: "AI was unable to process the event, but the webhook was received successfully.", 
-            score: 0, 
-            suggestions: ["Check Gemini API status", "Verify webhook payload structure"] 
+        console.error("AI Webhook Review Error:", error);
+        return {
+            event_review: "AI was unable to process this event at this time.",
+            score: 0,
+            suggestions: [error.message]
         };
     }
 }

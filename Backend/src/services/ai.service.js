@@ -1,23 +1,23 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Version: 1.0.9-SUPREME - Absolute Stability Final
+// Version: 1.1.0-STABLE - Final API Bridge
 async function tryModels(prompt, isExecution = false) {
     const key = process.env.GOOGLE_GEMINI_KEY || "";
     const genAI = new GoogleGenerativeAI(key);
     
-    // SUPREME V1 MODELS: Flash is the goat for stable v1.
-    const MODELS = ["gemini-1.5-flash"];
+    // STABLE MODELS: Flash is the primary, Pro as fallback
+    const MODELS = ["gemini-1.5-flash", "gemini-pro"];
 
-    console.log(`[AI Stability v1.0.9-SUPREME] Mode: ${isExecution ? 'Execute' : 'Review'}`);
+    console.log(`[AI Stability v1.1.0-STABLE] Mode: ${isExecution ? 'Execute' : 'Review'}`);
     
     for (const modelName of MODELS) {
         try {
-            console.log(`[AI Stability] Attempting ${modelName} on Absolute Stable v1...`);
+            console.log(`[AI Stability] Attempting ${modelName} via v1beta bridge...`);
             
-            // OFFICIAL SYNTAX: Pass apiVersion as 2nd argument to getGenerativeModel
+            // BRIDGE SYNTAX: Use v1beta for Gemini 1.5 Flash compatibility
             const model = genAI.getGenerativeModel(
                 { model: modelName },
-                { apiVersion: "v1" }
+                { apiVersion: "v1beta" }
             );
             
             const fullPrompt = isExecution 
@@ -47,7 +47,7 @@ async function aiService(code) {
             score: parseInt(parsed.score) || 0
         };
     } catch (err) {
-        throw new Error(`AI v1.0.9-SUPREME Error: ${err.message}`);
+        throw new Error(`AI v1.1.0-STABLE Error: ${err.message}`);
     }
 }
 
@@ -59,7 +59,7 @@ aiService.simulateExecution = async (code, language) => {
             explanation: parsed.explanation || "Simulation complete."
         };
     } catch (err) {
-        throw new Error(`Execution v1.0.9-SUPREME Error: ${err.message}`);
+        throw new Error(`Execution v1.1.0-STABLE Error: ${err.message}`);
     }
 };
 
