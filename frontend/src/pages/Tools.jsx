@@ -31,7 +31,8 @@ export default function Tools() {
             }
         } catch (err) {
             console.error(err);
-            setError(err.response?.data?.error || "AI Tool failed. Please check backend connection.");
+            const detailMsg = err.response?.data?.message || err.response?.data?.error || err.message;
+            setError(`AI Service: ${detailMsg}`);
         } finally {
             setLoading(false);
         }
