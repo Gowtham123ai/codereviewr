@@ -7,6 +7,8 @@
     { "source": "/api/rewrite", "destination": "/api/rewrite.js" },
     { "source": "/api/tools/explain", "destination": "/api/tools.js" },
     { "source": "/api/tools/detect-bugs", "destination": "/api/tools.js" },
+    { "source": "/api/push", "destination": "/api/push.js" },
+    { "source": "/webhook/github", "destination": "/api/push.js" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
